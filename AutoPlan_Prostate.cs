@@ -143,6 +143,21 @@ namespace AutoPlan_Prostate
             }
             Console.WriteLine("Setting DVH Estimates...");
             plan.CalculateDVHEstimates(rpModel.Name, targetMatches, structureMatches);
+            //add NTO
+            plan.OptimizationSetup.AddAutomaticNormalTissueObjective(100);
+            //create ring
+            string ringId = "NS_Ring05";
+            Structure ring = null;
+            if (structureSet.Structures.Any(st => st.Id.Equals(ringId, StringComparison.OrdinalIgnoreCase)))
+            {
+                ring = structureSet.Structures.First(st => st.Id.Equals(ringId, StringComparison.OrdinalIgnoreCase));
+            }
+            else
+            {
+                ring = structureSet.AddStructure("CONTROL", ringId);
+                ring.SegmentVolume = target.SegmentVolume.Margin(5).Sub(target.SegmentVolume);
+            }
+            plan.OptimizationSetup.AddPointObjective(ring, OptimizationObjectiveOperator.Upper, plan.TotalDose * 1.02, 0, 100);
             Console.WriteLine("Optimizing...");
             plan.Optimize();
             Console.WriteLine("Calculating Leaf Motions...");
@@ -153,7 +168,7 @@ namespace AutoPlan_Prostate
             Console.WriteLine("Saving Plan...");
             app.SaveModifications();
         }
-        // this will look for the active (drop to view) ct and structure set, need this to be static for finsing open patient
+        // this will look for the active (drop to view) ct and structure set, need this to be static for finding open patient
         private static void AskUserId(string desc, out string id)
         {
             Console.WriteLine($"Please enter the {desc}");
