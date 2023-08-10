@@ -7,7 +7,7 @@
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>AutoPlan_Prostate</RootNamespace>
-    <AssemblyName>AutoPlan_Prostate_00</AssemblyName>
+    <AssemblyName>AutoPlan_Prostate_01</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>

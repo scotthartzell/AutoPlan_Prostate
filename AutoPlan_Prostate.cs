@@ -7,7 +7,7 @@ using VMS.TPS.Common.Model.API;
 using VMS.TPS.Common.Model.Types;
 
 // TODO: Replace the following version attributes by creating AssemblyInfo.cs. You can do this in the properties of the Visual Studio project.
-[assembly: AssemblyVersion("1.0.0.1")]
+[assembly: AssemblyVersion("1.0.1.1")]
 [assembly: AssemblyFileVersion("1.0.0.1")]
 [assembly: AssemblyInformationalVersion("1.0")]
 
@@ -101,6 +101,52 @@ namespace AutoPlan_Prostate
                     structureSet.Image.UserOrigin);
             }
             Console.WriteLine($"Created {plan.Beams.Count()} beams");
+            //set the target and the Rx
+            string targetId = "PTVprost SV marg";
+            Structure target = structureSet.Structures.First(st => st.Id.Equals(targetId));
+            StringBuilder errorString = new StringBuilder();
+            //if (!plan.SetTargetStructureIfNoDose(target, errorString))
+            //{
+            //    Console.WriteLine($"Could not set target:\n{errorString}");
+            //};
+            plan.SetTargetStructureIfNoDose(target, errorString);
+            plan.SetPrescription(28, new DoseValue(250, DoseValue.DoseUnit.cGy), 1.0);
+            Console.WriteLine($"Plan prescribed {plan.TotalDose} in {plan.NumberOfFractions} fractions to {target.Id}");
+            // rapid plan time, in 16.1 don't need names of models
+            int rpCount = 0;
+            foreach(var rp in app.Calculation.GetDvhEstimationModelSummaries())// new to 16.1
+            {
+                Console.WriteLine($"[{rpCount}].\t{rp.Name} - {rp.TreatmentSite}");
+                rpCount++;
+            }
+            Console.WriteLine("Please select a RapidPlan model");
+            int rpSelect = Convert.ToInt32(Console.ReadLine());
+            var rpModel = app.Calculation.GetDvhEstimationModelSummaries().ElementAt(rpSelect);
+
+            Dictionary<string, string> structureMatches = new Dictionary<string, string>();
+            Dictionary<string, DoseValue> targetMatches = new Dictionary<string, DoseValue>();
+            foreach(var rpStructure in app.Calculation.GetDvhEstimationModelStructures(rpModel.ModelUID))
+            {
+                if(rpStructure.StructureType == DVHEstimationStructureType.PTV)
+                {
+                    targetMatches.Add(target.Id, plan.TotalDose);
+                    structureMatches.Add(target.Id, rpStructure.Id);
+                }
+                else
+                {
+                    if(structureSet.Structures.Any(st => st.Id.Equals(rpStructure.Id)))
+                    {
+                        Structure s = structureSet.Structures.First(st => st.Id.Equals(rpStructure.Id));
+                        structureMatches.Add(s.Id, rpStructure.Id);
+                    }
+                }
+            }
+            Console.WriteLine("Setting DVH Estimates...");
+            plan.CalculateDVHEstimates(rpModel.Name, targetMatches, structureMatches);
+            Console.WriteLine("Optimizing...");
+            plan.Optimize();
+            Console.WriteLine("Calculating Leaf Motions...");
+            plan.CalculateLeafMotions();
 
             Console.WriteLine("Calculating Dose...");
             plan.CalculateDose();
