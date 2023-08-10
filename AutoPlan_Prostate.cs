@@ -7,7 +7,7 @@ using VMS.TPS.Common.Model.API;
 using VMS.TPS.Common.Model.Types;
 
 // TODO: Replace the following version attributes by creating AssemblyInfo.cs. You can do this in the properties of the Visual Studio project.
-[assembly: AssemblyVersion("1.0.1.1")]
+[assembly: AssemblyVersion("1.0.1.2")]
 [assembly: AssemblyFileVersion("1.0.0.1")]
 [assembly: AssemblyInformationalVersion("1.0")]
 
@@ -27,6 +27,12 @@ namespace AutoPlan_Prostate
         {
             try
             {
+                if(args.Any())
+                {
+                    _patientId = args.First().Split(';').First();
+                    _imageId = args.First().Split(';').ElementAt(1);
+                    _strSetId = args.First().Split(';').Last();
+                }
                 using (Application app = Application.CreateApplication())
                 {
                     Execute(app);
